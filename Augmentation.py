@@ -1,54 +1,43 @@
-import sys # to access the system
+import sys
 import os
-from PIL import Image
-import matplotlib.pyplot as plt
-import cv2
-import numpy as np
+import Augmentor
 
-
-# def load_images_from_directory(dir_path):
-#     images_list = []
-#     for image_filename in os.listdir(dir_path):
-#         image_path = os.path.join(dir_path, image_filename)
-#         try:
-#             with Image.open(image_path) as img:
-#                 images_list.append(image_path)  # The file is an image
-#         except IOError:
-#             pass  # This file is not an image
-#     return images_list
 
 def main():
     if len(sys.argv) != 2:
         raise AssertionError("Incorrect number of arguments")
-    
-    image_path = sys.argv[1]
 
-    if not os.path.exists(image_path):
-        raise FileNotFoundError(f"The directory {image_path} does not exist.")
+    dir_path = sys.argv[1]
 
-    image =cv2.imread(image_path)
-    height, width, channels = image.shape
-    print(height, width, channels)
-    rotation_matrix = cv2.getRotationMatrix2D((width/2,height/2),45,1)
-    rotated_image = cv2.warpAffine(image,rotation_matrix,(width,height))
-    bright = np.ones(image.shape , dtype="uint8") * 70
-    brightdecrease = cv2.subtract(image,bright)
-    brightincrease = cv2.add(image,bright)
-    flip = cv2.flip(image,3)
+    if not os.path.exists(dir_path):
+        raise FileNotFoundError(f"The directory {dir_path} does not exist.")
 
-    combined_image = np.hstack((image, rotated_image, brightdecrease, brightincrease, flip))
-    cv2.imshow('first' , combined_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    # print(total_images)
+    for sub_dir_name in os.listdir(dir_path):
+        sub_dir_path = os.path.join(dir_path, sub_dir_name)
+        output_dir_path = os.path.join("../../../" + dir_path + "_augmented",
+                                       sub_dir_name)
 
-    # labels = list(directory_images.keys())
-    # sizes = [len(images) for images in directory_images.values()]
-
-    # fig, ax = plt.subplots()
-    # ax.pie(sizes, labels=labels, autopct='%1.1f%%')
-    # plt.show()
-    
+        p = Augmentor.Pipeline(source_directory=sub_dir_path,
+                               output_directory=output_dir_path)
+        p.rotate_without_crop(
+            probability=.5,
+            max_left_rotation=90,
+            max_right_rotation=90,
+            expand=True)
+        p.zoom(
+            probability=.3,
+            min_factor=.5,
+            max_factor=1.5)
+        p.skew(
+            probability=.3,
+            magnitude=.35)
+        p.random_brightness(
+            probability=.5,
+            min_factor=.2,
+            max_factor=2)
+        p.flip_random(probability=.5)
+        p.crop_random(probability=.4, percentage_area=0.5)
+        p.sample(1600)
 
 
 if __name__ == "__main__":
