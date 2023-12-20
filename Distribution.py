@@ -10,7 +10,7 @@ def load_images_from_directory(dir_path):
         image_path = os.path.join(dir_path, image_filename)
         try:
             with Image.open(image_path):
-                images_list.append(image_path)  # The file is an image
+                images_list.append(image_path)
         except IOError:
             pass  # This file is not an image
     return images_list
